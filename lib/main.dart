@@ -45,18 +45,6 @@ class _MyAppState extends State<MyApp> {
     });
   }
 
-  bool _getStatusSerialConnection() {
-    _flutterSerialCommunicationPlugin
-        .getDeviceConnectionListener()
-        .receiveBroadcastStream()
-        .listen((event) {
-      setState(() {
-        isConnected = event;
-      });
-    });
-    return isConnected;
-  }
-
   _getAllConnectedDevicedButtonPressed() async {
     List<DeviceInfo> newConnectedDevices =
         await _flutterSerialCommunicationPlugin.getAvailableDevices();
@@ -124,8 +112,6 @@ class _MyAppState extends State<MyApp> {
           padding: const EdgeInsets.all(16.0),
           child: Column(
             children: [
-              //Text("Is Connected: $isConnected"),
-              //const SizedBox(height: 16.0),
               TextButton(
                 onPressed: _getAllConnectedDevicedButtonPressed,
                 child: const Text("Get Device"),
@@ -133,32 +119,45 @@ class _MyAppState extends State<MyApp> {
               const SizedBox(width: 16.0),
               ...connectedDevices.asMap().entries.map((entry) {
                 return Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
                     Flexible(child: Text(entry.value.productName)),
                     const SizedBox(width: 16.0),
                     FilledButton(
                       onPressed: () {
-                        //_connectButtonPressed(entry.value);
-                        if (_getStatusSerialConnection() == false) {
-                          _connectButtonPressed(entry.value);
+                        if (isConnected) {
+                          _disconnectButtonPressed();
                         } else {
-                          _disconnectButtonPressed;
+                          _connectButtonPressed(entry.value);
                         }
                       },
-                      child: Text(openButtonText),
-                    ),
-                    FilledButton(
-                      onPressed: 
-                      
-                          ? _disconnectButtonPressed
-                          : _connectButtonPressed(entry.value),
                       child: Text(openButtonText),
                     ),
                   ],
                 );
               }).toList(),
               const SizedBox(height: 16.0),
+              TextField(
+                  maxLength: 8,
+                  decoration: const InputDecoration(
+                      border: InputBorder.none,
+                      hintText: "Введите devAddress",
+                      labelText: "devAddr",
+                      fillColor: Colors.black12,
+                      filled: true
+                      //suffixIcon: IconButton(onPressed: (){}, icon: const Icon(Icons.clear))
+                      ),
 
+                  /*onSubmitted: (text) {
+                  print("onSubmitted");
+                  print("Введенный текст: $text");
+                },*/
+                  onChanged: (text) {
+                    if (text.length == 8) {
+                      print("onChanged");
+                      print("Введенный текст: $text");
+                    }
+                  }),
               const SizedBox(height: 16.0),
               Expanded(
                 flex: 8,
