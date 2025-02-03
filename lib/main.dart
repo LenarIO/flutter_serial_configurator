@@ -1,49 +1,195 @@
 import 'package:flutter/material.dart';
 
+import 'package:flutter/services.dart';
+import 'package:flutter_serial_communication/flutter_serial_communication.dart';
+import 'package:flutter_serial_communication/models/device_info.dart';
+
 void main() {
   runApp(const MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.orange),
-        useMaterial3: true,
-      ),
-      home: const MyHomePage(title: 'Serial Configurator'),
-    );
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  final _flutterSerialCommunicationPlugin = FlutterSerialCommunication();
+  bool isConnected = false;
+  List<DeviceInfo> connectedDevices = [];
+  List<Uint8List> received = [];
+  @override
+  void initState() {
+    super.initState();
+
+    _flutterSerialCommunicationPlugin
+        .getSerialMessageListener()
+        .receiveBroadcastStream()
+        .listen((rxData) {
+      setState(() {
+        received.add(rxData);
+      });
+      _flutterSerialCommunicationPlugin.write(rxData);
+    });
+    _flutterSerialCommunicationPlugin.setParameters(115200, 8, 1, 0);
+
+    _flutterSerialCommunicationPlugin
+        .getDeviceConnectionListener()
+        .receiveBroadcastStream()
+        .listen((event) {
+      setState(() {
+        isConnected = event;
+      });
+    });
   }
-}
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
+  bool _getStatusSerialConnection() {
+    _flutterSerialCommunicationPlugin
+        .getDeviceConnectionListener()
+        .receiveBroadcastStream()
+        .listen((event) {
+      setState(() {
+        isConnected = event;
+      });
+    });
+    return isConnected;
+  }
 
-  final String title;
+  _getAllConnectedDevicedButtonPressed() async {
+    List<DeviceInfo> newConnectedDevices =
+        await _flutterSerialCommunicationPlugin.getAvailableDevices();
+    setState(() {
+      connectedDevices = newConnectedDevices;
+    });
+  }
 
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
+  _connectButtonPressed(DeviceInfo deviceInfo) async {
+    bool isConnectionSuccess =
+        await _flutterSerialCommunicationPlugin.connect(deviceInfo, 115200);
+    debugPrint("Is Connection Success:  $isConnectionSuccess");
+  }
 
-class _MyHomePageState extends State<MyHomePage> {
+  _disconnectButtonPressed() async {
+    await _flutterSerialCommunicationPlugin.disconnect();
+  }
+
+  _sendMessageButtonPressed() async {
+    bool isMessageSent = await _flutterSerialCommunicationPlugin
+        .write(Uint8List.fromList([0xBB, 0x00, 0x22, 0x00, 0x00, 0x22, 0x7E]));
+    debugPrint("Is Message Sent:  $isMessageSent");
+  }
+
+  _sendMessageButtonLeftPressed() async {
+    bool isMessageSent = await _flutterSerialCommunicationPlugin
+        .write(Uint8List.fromList([0x61]));
+    debugPrint("Is Message Sent:  $isMessageSent");
+  }
+
+  _sendMessageButtonForwardPressed() async {
+    bool isMessageSent = await _flutterSerialCommunicationPlugin
+        .write(Uint8List.fromList([0x62]));
+    debugPrint("Is Message Sent:  $isMessageSent");
+  }
+
+  _sendMessageButtonRightPressed() async {
+    bool isMessageSent = await _flutterSerialCommunicationPlugin
+        .write(Uint8List.fromList([0x63]));
+    debugPrint("Is Message Sent:  $isMessageSent");
+  }
+
+  _sendMessageButtonBackPressed() async {
+    bool isMessageSent = await _flutterSerialCommunicationPlugin
+        .write(Uint8List.fromList([0x64]));
+    debugPrint("Is Message Sent:  $isMessageSent");
+  }
+
+  void clearList() {
+    setState(() {
+      received = [];
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text(widget.title),
-      ),
-      body: const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text('Text'),
-          ],
+    var openButtonText = isConnected == false ? 'Connect' : 'Disconnect';
+
+    return MaterialApp(
+      home: Scaffold(
+        appBar: AppBar(
+          title: const Text('Flutter Serial Communication Example App'),
+        ),
+        body: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            children: [
+              //Text("Is Connected: $isConnected"),
+              //const SizedBox(height: 16.0),
+              TextButton(
+                onPressed: _getAllConnectedDevicedButtonPressed,
+                child: const Text("Get Device"),
+              ),
+              const SizedBox(width: 16.0),
+              ...connectedDevices.asMap().entries.map((entry) {
+                return Row(
+                  children: [
+                    Flexible(child: Text(entry.value.productName)),
+                    const SizedBox(width: 16.0),
+                    FilledButton(
+                      onPressed: () {
+                        //_connectButtonPressed(entry.value);
+                        if (_getStatusSerialConnection() == false) {
+                          _connectButtonPressed(entry.value);
+                        } else {
+                          _disconnectButtonPressed;
+                        }
+                      },
+                      child: Text(openButtonText),
+                    ),
+                    FilledButton(
+                      onPressed: 
+                      
+                          ? _disconnectButtonPressed
+                          : _connectButtonPressed(entry.value),
+                      child: Text(openButtonText),
+                    ),
+                  ],
+                );
+              }).toList(),
+              const SizedBox(height: 16.0),
+
+              const SizedBox(height: 16.0),
+              Expanded(
+                flex: 8,
+                //child: Card(
+                //  margin: const EdgeInsets.all(5.0),
+                child: ListView.builder(
+                    padding: const EdgeInsets.all(0.0),
+                    itemCount: received.length,
+                    itemBuilder: (context, index) {
+                      /*
+                    OUTPUT for raw bytes
+                    return Text(receiveDataList[index].toString());
+                    */
+                      /* output for string */
+                      return Text(String.fromCharCodes(received[index]),
+                          strutStyle: StrutStyle(
+                            //fontFamily: 'Roboto',
+                            //fontSize: 18,
+                            //height: 0,
+                            leading: 0,
+                          ),
+                          style: TextStyle(fontSize: 22));
+                    }),
+                //),
+              ),
+            ],
+          ),
+        ),
+        floatingActionButton: FloatingActionButton(
+          onPressed: clearList,
+          child: const Icon(Icons.refresh),
         ),
       ),
     );
