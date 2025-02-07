@@ -93,15 +93,39 @@ class _MyAppState extends State<MyApp> {
     debugPrint("Is Message Sent:  $isMessageSent");
   }
 
+  _sendRequest() async {
+    bool isMessageSent = await _flutterSerialCommunicationPlugin
+        .write(Uint8List.fromList([0x64]));
+  }
+
   void clearList() {
     setState(() {
       received = [];
     });
   }
 
+  String _targetDevAddr = '';
+
+  _changeTargetDevAddr(String text) {
+    //setState(() => _targetDevAddr = text);
+    setState(() {
+      print("Введенный текст: $text");
+      if (text.length == 8) {
+        print("onChanged");
+        print("Введенный текст: $text");
+        _targetDevAddr = text;
+      } else {
+        _targetDevAddr = '';
+      }
+    });
+  }
+
+  final TextEditingController _controller = new TextEditingController();
+
   @override
   Widget build(BuildContext context) {
     var openButtonText = isConnected == false ? 'Connect' : 'Disconnect';
+    // bool _isCorrectDevAddr = false;
 
     return MaterialApp(
       home: Scaffold(
@@ -109,14 +133,14 @@ class _MyAppState extends State<MyApp> {
           title: const Text('Flutter Serial Communication Example App'),
         ),
         body: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(4.0),
           child: Column(
             children: [
               TextButton(
                 onPressed: _getAllConnectedDevicedButtonPressed,
                 child: const Text("Get Device"),
               ),
-              const SizedBox(width: 16.0),
+              const SizedBox(width: 4.0),
               ...connectedDevices.asMap().entries.map((entry) {
                 return Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -136,29 +160,25 @@ class _MyAppState extends State<MyApp> {
                   ],
                 );
               }).toList(),
-              const SizedBox(height: 16.0),
+              const SizedBox(height: 4.0),
               TextField(
-                  maxLength: 8,
-                  decoration: const InputDecoration(
-                      border: InputBorder.none,
-                      hintText: "Введите devAddress",
-                      labelText: "devAddr",
-                      fillColor: Colors.black12,
-                      filled: true
-                      //suffixIcon: IconButton(onPressed: (){}, icon: const Icon(Icons.clear))
-                      ),
+                maxLength: 8,
+                controller: _controller,
+                decoration: const InputDecoration(
+                  border: OutlineInputBorder(),
+                  hintText: "Введите devAddress",
+                  labelText: "devAddr",
+                  /*errorText: null,
+                  suffixIcon: IconButton(
+                      onPressed: _controller.clear,
+                      icon: const Icon(Icons.clear)),*/
+                ),
 
-                  /*onSubmitted: (text) {
-                  print("onSubmitted");
-                  print("Введенный текст: $text");
-                },*/
-                  onChanged: (text) {
-                    if (text.length == 8) {
-                      print("onChanged");
-                      print("Введенный текст: $text");
-                    }
-                  }),
+                onSubmitted: _changeTargetDevAddr,
+                // onChanged: _changeTargetDevAddr
+              ),
               const SizedBox(height: 16.0),
+              Text("Введенный текст: $_targetDevAddr"),
               Expanded(
                 flex: 8,
                 //child: Card(
