@@ -1,5 +1,9 @@
 import 'dart:ffi';
+import 'dart:async';
 
 class TxRxData {
-  late Uint32 ID;
+  late int Head;
+  late int devAddr;
+  //List<Uint8> data;
+  //Uint16 crc;
 }

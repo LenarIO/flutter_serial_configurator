@@ -1,8 +1,12 @@
+import 'dart:ffi';
+
 import 'package:flutter/material.dart';
 
 import 'package:flutter/services.dart';
 import 'package:flutter_serial_communication/flutter_serial_communication.dart';
 import 'package:flutter_serial_communication/models/device_info.dart';
+
+import 'model_data.dart';
 
 void main() {
   runApp(const MyApp());
@@ -20,6 +24,7 @@ class _MyAppState extends State<MyApp> {
   bool isConnected = false;
   List<DeviceInfo> connectedDevices = [];
   List<Uint8List> received = [];
+  TxRxData txrxDada = TxRxData();
   @override
   void initState() {
     super.initState();
@@ -96,6 +101,36 @@ class _MyAppState extends State<MyApp> {
   _sendRequest() async {
     bool isMessageSent = await _flutterSerialCommunicationPlugin
         .write(Uint8List.fromList([0x64]));
+  }
+
+  _sendData(TxRxData data) async {
+    bool isMessageSent = await _flutterSerialCommunicationPlugin
+        .write(Uint8List.fromList(data as List<int>));
+  }
+
+  int Head = 0xAB;
+  List<int> _targetDevAddr2 = [0x15, 0xf5, 0x26, 0x8a];
+  _sendData2() async {
+    txrxDada.Head = 0xAB;
+    print(txrxDada.Head);
+    txrxDada.devAddr = 0x15f5268a;
+    print(txrxDada.devAddr);
+    List<int> list = [];
+    //list.add(txrxDada.Head as int);
+    list.add(Head);
+    list.addAll(_targetDevAddr2);
+    print(list);
+    bool isMessageSent =
+        await _flutterSerialCommunicationPlugin.write(Uint8List.fromList(list));
+  }
+
+  _sendData3() async {
+    txrxDada.Head = 0xAB;
+    txrxDada.devAddr = 0x15f5268a;
+    List<int> list = [];
+    list.add(0xAB);
+    list.add(txrxDada.Head);
+    print(list);
   }
 
   void clearList() {
@@ -179,6 +214,20 @@ class _MyAppState extends State<MyApp> {
               ),
               const SizedBox(height: 16.0),
               Text("Введенный текст: $_targetDevAddr"),
+              FilledButton(
+                  onPressed: isConnected ? _sendData2 : null,
+                  /*  () {
+                    txrxDada.Head = 0xAB as Uint16;
+                    txrxDada.devAddr = 0x15f5268a as Uint32;
+                    //_sendData(txrxDada);
+                    _sendData2();
+                  },*/
+                  child: const Text("Test send")),
+              FilledButton(onPressed: _sendData2, child: const Text("TTEST")),
+              FilledButton(
+                onPressed: isConnected ? _sendMessageButtonPressed : null,
+                child: const Text("Send Message To Connected Device"),
+              ),
               Expanded(
                 flex: 8,
                 //child: Card(
