@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:ffi';
 
 import 'package:flutter/material.dart';
@@ -35,6 +36,9 @@ class _MyAppState extends State<MyApp> {
         .listen((rxData) {
       setState(() {
         received.add(rxData);
+        /*  if (received.last == "\r") {
+          received = [];
+        }*/
       });
       _flutterSerialCommunicationPlugin.write(rxData);
     });
@@ -113,7 +117,7 @@ class _MyAppState extends State<MyApp> {
   _sendData2() async {
     txrxDada.Head = 0xAB;
     print(txrxDada.Head);
-    txrxDada.devAddr = 0x15f5268a;
+    //txrxDada.devAddr = 0x15f5268a;
     print(txrxDada.devAddr);
     List<int> list = [];
     //list.add(txrxDada.Head as int);
@@ -126,11 +130,13 @@ class _MyAppState extends State<MyApp> {
 
   _sendData3() async {
     txrxDada.Head = 0xAB;
-    txrxDada.devAddr = 0x15f5268a;
+    txrxDada.devAddr = Uint8List.fromList(utf8.encode(_targetDevAddr));
     List<int> list = [];
-    list.add(0xAB);
     list.add(txrxDada.Head);
-    print(list);
+    //list.add(txrxDada.devAddr);
+
+    bool isMessageSent =
+        await _flutterSerialCommunicationPlugin.write(Uint8List.fromList(list));
   }
 
   void clearList() {
@@ -153,6 +159,11 @@ class _MyAppState extends State<MyApp> {
         _targetDevAddr = '';
       }
     });
+  }
+
+  // Функция для преобразования списка Uint8List в строку
+  String _convertUint8ListToString(List<Uint8List> list) {
+    return list.map((uint8list) => utf8.decode(uint8list)).join(' ');
   }
 
   final TextEditingController _controller = new TextEditingController();
@@ -223,11 +234,14 @@ class _MyAppState extends State<MyApp> {
                     _sendData2();
                   },*/
                   child: const Text("Test send")),
-              FilledButton(onPressed: _sendData2, child: const Text("TTEST")),
+              FilledButton(
+                  onPressed: isConnected ? _sendData3 : null,
+                  child: const Text("Send dev Addr")),
               FilledButton(
                 onPressed: isConnected ? _sendMessageButtonPressed : null,
                 child: const Text("Send Message To Connected Device"),
               ),
+              //Text(utf8.decode(received.last)),
               Expanded(
                 flex: 8,
                 //child: Card(
@@ -241,7 +255,12 @@ class _MyAppState extends State<MyApp> {
                     return Text(receiveDataList[index].toString());
                     */
                       /* output for string */
-                      return Text(String.fromCharCodes(received[index]),
+                      String displayText = received
+                          .map((uint8list) => utf8.decode(uint8list))
+                          .join(' ');
+                      return Text(
+                          utf8.decode(received[
+                              index]), //String.fromCharCodes(received[index]),
                           strutStyle: StrutStyle(
                             //fontFamily: 'Roboto',
                             //fontSize: 18,
