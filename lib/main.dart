@@ -113,28 +113,15 @@ class _MyAppState extends State<MyApp> {
   }
 
   int Head = 0xAB;
-  List<int> _targetDevAddr2 = [0x15, 0xf5, 0x26, 0x8a];
-  _sendData2() async {
-    txrxDada.Head = 0xAB;
-    print(txrxDada.Head);
-    //txrxDada.devAddr = 0x15f5268a;
-    print(txrxDada.devAddr);
-    List<int> list = [];
-    //list.add(txrxDada.Head as int);
-    list.add(Head);
-    list.addAll(_targetDevAddr2);
-    print(list);
-    bool isMessageSent =
-        await _flutterSerialCommunicationPlugin.write(Uint8List.fromList(list));
-  }
-
   _sendData3() async {
-    txrxDada.Head = 0xAB;
-    txrxDada.devAddr = Uint8List.fromList(utf8.encode(_targetDevAddr));
+    txrxDada.Head = Head;
     List<int> list = [];
     list.add(txrxDada.Head);
-    //list.add(txrxDada.devAddr);
-
+    for (var i = 0; i < _targetDevAddr.length / 2; i++) {
+      String str = _targetDevAddr[i * 2] + _targetDevAddr[i * 2 + 1];
+      list.add(int.parse(str, radix: 16));
+    }
+    print(list);
     bool isMessageSent =
         await _flutterSerialCommunicationPlugin.write(Uint8List.fromList(list));
   }
@@ -226,22 +213,8 @@ class _MyAppState extends State<MyApp> {
               const SizedBox(height: 16.0),
               Text("Введенный текст: $_targetDevAddr"),
               FilledButton(
-                  onPressed: isConnected ? _sendData2 : null,
-                  /*  () {
-                    txrxDada.Head = 0xAB as Uint16;
-                    txrxDada.devAddr = 0x15f5268a as Uint32;
-                    //_sendData(txrxDada);
-                    _sendData2();
-                  },*/
-                  child: const Text("Test send")),
-              FilledButton(
                   onPressed: isConnected ? _sendData3 : null,
                   child: const Text("Send dev Addr")),
-              FilledButton(
-                onPressed: isConnected ? _sendMessageButtonPressed : null,
-                child: const Text("Send Message To Connected Device"),
-              ),
-              //Text(utf8.decode(received.last)),
               Expanded(
                 flex: 8,
                 //child: Card(
@@ -261,13 +234,13 @@ class _MyAppState extends State<MyApp> {
                       return Text(
                           utf8.decode(received[
                               index]), //String.fromCharCodes(received[index]),
-                          strutStyle: StrutStyle(
+                          strutStyle: const StrutStyle(
                             //fontFamily: 'Roboto',
                             //fontSize: 18,
                             //height: 0,
                             leading: 0,
                           ),
-                          style: TextStyle(fontSize: 22));
+                          style: const TextStyle(fontSize: 22));
                     }),
                 //),
               ),
